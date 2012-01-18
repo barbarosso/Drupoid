@@ -23,7 +23,7 @@ Every request is logged into watchdog - good or bad.
 Android
 -------
 
-The app is written against Android 2.3.3, API level 10.
+The app is written against Android 2.3.3, SDK level 10.
 Before compiling, you need to change 2 paramaters in
 the following file: src/com/swentel/drupoid/DrupoidActivity.java.
 
