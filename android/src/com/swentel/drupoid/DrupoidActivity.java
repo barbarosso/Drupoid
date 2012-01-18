@@ -34,6 +34,7 @@ public class DrupoidActivity extends Activity {
   private static final String DrupoidPassword = "test";
 
   private static String selectedImagePath = "";
+  private static String image_title = "";
   private static final int SELECT_PICTURE = 1;
   InputStream inputStream;
 
@@ -57,6 +58,7 @@ public class DrupoidActivity extends Activity {
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
+        image_title = title.getText().toString();
         startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_PICTURE);
       }
       else {
@@ -107,7 +109,7 @@ public class DrupoidActivity extends Activity {
 
     ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
     nameValuePairs.add(new BasicNameValuePair("image", image_str));
-    nameValuePairs.add(new BasicNameValuePair("title", "test title"));
+    nameValuePairs.add(new BasicNameValuePair("title", image_title));
     nameValuePairs.add(new BasicNameValuePair("password", DrupoidPassword));
 
     try {
