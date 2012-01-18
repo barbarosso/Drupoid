@@ -1,0 +1,261 @@
+<?php
+
+/**
+ * @file
+ * Drupoid main functions.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function drupoid_menu() {
+  $items = array();
+
+  $items['drupoid'] = array(
+    'title' => 'Drupoid',
+    'page callback' => 'drupoid_request',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/media/drupoid'] = array(
+    'title' => 'Drupoid',
+    'description' => 'Configure the settings for Android application.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drupoid_config'),
+    'access arguments' => array('administer drupoid'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function drupoid_permission() {
+  return array(
+    'administer drupoid' => array(
+      'title' => t('Administer Drupoid'),
+      'description' => t('Configure your Drupoid settings')
+    ),
+  );
+}
+
+/**
+ * Menu callback: configuration form.
+ */
+function drupoid_config($form, $form_state) {
+
+  $form['drupoid_password'] = array(
+    '#type' => 'password_confirm',
+    '#description' => t('This password is encrypted, so remember carefully what you enter. When left empty, a previously entered password will not be overwritten. You currently have !status.', array('!status' => (variable_get('drupoid_password') == '' ? t('<strong>no password</strong>') : t('<strong>a password</strong>')))),
+  );
+
+  $options = array();
+  $instances = field_info_instances('node');
+  foreach ($instances as $bundle => $fields) {
+    foreach ($fields as $field_name => $field) {
+      $field_info = field_info_field($field_name);
+      if ($field_info['type'] == 'image') {
+        $options[$bundle . '|' . $field_name] = $bundle . ': ' . $field_name;
+      }
+    }
+  }
+  $form['drupoid_image_field'] = array(
+    '#title' => t('Image field'),
+    '#required' => TRUE,
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('drupoid_image_field'),
+  );
+
+  $form['drupoid_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Authored by'),
+    '#maxlength' => 60,
+    '#autocomplete_path' => 'user/autocomplete',
+    '#default_value' => variable_get('drupoid_name'),
+    '#description' => t('Leave blank for %anonymous.', array('%anonymous' => variable_get('anonymous', t('Anonymous')))),
+  );
+
+
+  $form['drupoid_status'] = array(
+    '#title' => t('Publish immediately'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('drupoid_status'),
+  );
+
+  $form['drupoid_debug'] = array(
+    '#title' => t('Log the $_POST variable to watchdog. Turn off in production.'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('drupoid_debug'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback: save the configuration form.
+ */
+function drupoid_config_submit($form, $form_state) {
+
+  // Password.
+  if (!empty($form_state['values']['drupoid_password'])) {
+    require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+    $password = user_hash_password($form_state['values']['drupoid_password']);
+    variable_set('drupoid_password', $password);
+  }
+
+  // Debug.
+  variable_set('drupoid_debug', $form_state['values']['drupoid_debug']);
+
+  // Status.
+  variable_set('drupoid_status', $form_state['values']['drupoid_status']);
+
+  // Author.
+  variable_set('drupoid_name', $form_state['values']['drupoid_name']);
+
+  // Image field.
+  variable_set('drupoid_image_field', $form_state['values']['drupoid_image_field']);
+
+  // Set message.
+  drupal_set_message(t('The configuration options have been saved.'));
+}
+
+/**
+ * Menu callback: perform the drupoid request.
+ */
+function drupoid_request() {
+
+  // Debug ?
+  if (variable_get('drupoid_debug')) {
+    watchdog('drupoid_debug', print_r($_POST, TRUE));
+  }
+
+  // Check if the request is valid.
+  $valid_request = _drupoid_is_valid_request();
+  if (!$valid_request['valid']) {
+    $toast = $valid_request['toast'];
+    $severity = WATCHDOG_WARNING;
+  }
+  else {
+    $severity = WATCHDOG_NOTICE;
+
+    // Try to save the file.
+    $file = _drupoid_save_upload();
+
+    if ($file) {
+
+      // Build node.
+      list($bundle, $image_field_name) = explode('|', variable_get('drupoid_image_field'));
+      $node = new stdClass();
+      $node->title = $_POST['title'];
+      $node->type = $bundle;
+      $node->status = variable_get('drupoid_status', FALSE);
+      $node->name = variable_get('drupoid_name');
+      $node->language = LANGUAGE_NONE;
+      $node->{$image_field_name}[LANGUAGE_NONE][0] = (array) $file;
+
+      // Save the node.
+      node_submit($node);
+      node_save($node);
+      if ($node->nid) {
+        $toast = t('Image has been posted.');
+      }
+      else {
+        $severity = WATCHDOG_WARNING;
+        $toast = t('Error saving new node.');
+      }
+    }
+    else {
+      $severity = WATCHDOG_WARNING;
+      $toast = t('Image file could not be saved.');
+    }
+  }
+
+  watchdog('drupoid', $toast, array(), $severity);
+  print $toast;
+  exit();
+}
+
+/**
+ * Helper function to upload an image.
+ */
+function _drupoid_save_upload() {
+
+  $image = $_POST['image'];
+  $binary = base64_decode($image);
+  $filename = 'public://android_' . time() . '.jpg';
+
+  return file_save_data($binary, $filename);
+}
+
+/**
+ * Helper function to check if the request is valid.
+ */
+function _drupoid_is_valid_request() {
+
+  // Password send through ?
+  if (!isset($_POST['password'])) {
+    return array(
+      'valid' => FALSE,
+      'toast' => t('No password found in request.'),
+    );
+  }
+
+  // Title send through ?
+  if (!isset($_POST['title'])) {
+    return array(
+      'valid' => FALSE,
+      'toast' => t('No title found in request.'),
+    );
+  }
+
+  // Image send through ?
+  if (!isset($_POST['image'])) {
+    return array(
+      'valid' => FALSE,
+      'toast' => t('No image found in request.'),
+    );
+  }
+
+  // Is the drupoid_password variable set.
+  if (!variable_get('drupoid_password')) {
+    return array(
+      'valid' => FALSE,
+      'toast' => t('No password set. Configure it on your Drupal installation.'),
+    );
+  }
+
+  // Is the drupoid_image_field variable set.
+  if (!variable_get('drupoid_image_field')) {
+    return array(
+      'valid' => FALSE,
+      'toast' => t('No image field set. Configure it on your Drupal installation.'),
+    );
+  }
+
+  // Compare drupoid_password and post password.
+  $stored_hash = variable_get('drupoid_password');
+  $password = $_POST['password'];
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+  $hash = _password_crypt('sha512', $password, $stored_hash);
+  if ($hash && $stored_hash == $hash) {
+    return array(
+      'valid' => TRUE,
+      'toast' => t('Password match.'),
+    );
+  }
+  else {
+    return array(
+      'valid' => FALSE,
+      'toast' => t('Passwords do not match.'),
+    );
+  }
+}
+

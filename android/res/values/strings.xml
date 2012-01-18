@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+
+    <string name="title">Title</string>
+    <string name="app_name">Drupoid</string>
+    <string name="upload_button">Upload</string>
+    <string name="select_image">Select image</string>
+
+</resources>

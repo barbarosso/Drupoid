@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:stretchColumns="1"
+  >
+  <TableRow>
+    <TextView android:text="@string/title" />
+    <EditText
+        android:id="@+id/title"
+        android:inputType="text" />
+    <requestFocus />
+  </TableRow>
+
+  <Button android:id="@+id/select_image"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/select_image"
+  />
+
+</TableLayout>

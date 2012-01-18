@@ -1,0 +1,32 @@
+
+Drupoid
+-------
+
+Example Drupal module able to save a title and image coming from 
+an Android application. The source for this module and the application 
+can be found at http://github.com/swentel/Drupoid
+
+Drupal content type
+-------------------
+
+You need to create at least one content type with an image field.
+You can of course change this to your own needs.
+
+Drupal Installation
+-------------------
+Enable the module, give yourself the 'administer drupoid' permission
+and go to admin/config/media/drupoid where you need to enter a password 
+and the number of your Android phone and configure the image field.
+
+Every request is logged into watchdog - good or bad.
+
+Android
+-------
+
+The app is written against Android 2.3.3, API level 10.
+Before compiling, you need to change 2 paramaters in
+the following file: src/com/swentel/drupoid/DrupoidActivity.java.
+
+- DrupoidPassword
+- DrupoidUrl
+
