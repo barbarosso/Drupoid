@@ -42,7 +42,6 @@ public class DrupoidActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
 
-    // Add listener on image button.
     Button select = (Button) findViewById(R.id.select_image);
     select.setOnClickListener(onImageSelect);
   }
@@ -55,7 +54,6 @@ public class DrupoidActivity extends Activity {
     public void onClick(View v) {
       EditText title = (EditText) findViewById(R.id.title);
       if (title.getText().toString().length() > 0) {
-        // Select an image.
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
@@ -98,11 +96,15 @@ public class DrupoidActivity extends Activity {
    */
   public void DrupoidUpload(String selectedImagePath) {
 
-    Bitmap bitmap = BitmapFactory.decodeFile(selectedImagePath);
+    BitmapFactory.Options o2 = new BitmapFactory.Options();
+    int scale = 2;
+    o2.inSampleSize = scale;
+    Bitmap bitmap = BitmapFactory.decodeFile(selectedImagePath, o2);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream);
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream);
     byte[] byte_arr = stream.toByteArray();
     String image_str = Base64.encodeBytes(byte_arr);
+
     ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
     nameValuePairs.add(new BasicNameValuePair("image", image_str));
     nameValuePairs.add(new BasicNameValuePair("title", "test title"));
