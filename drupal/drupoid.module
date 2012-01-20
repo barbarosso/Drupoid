@@ -166,6 +166,7 @@ function drupoid_request() {
       node_save($node);
       if ($node->nid) {
         $toast = t('Image has been posted.');
+        cache_clear_all();
       }
       else {
         $severity = WATCHDOG_WARNING;
