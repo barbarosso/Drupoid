@@ -4,6 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical" >
 
+    <Button
+        android:id="@+id/upload_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/upload_button" />
+
     <EditText
         android:id="@+id/title"
         android:layout_width="fill_parent"
@@ -14,11 +21,14 @@
 
     <requestFocus />
 
-  <Button
-      android:id="@+id/upload_button"
-      android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
-      android:layout_margin="10dp"
-      android:text="@string/upload_button" />
+    <ImageView
+        android:id="@+id/image_preview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_gravity="center"
+        android:layout_margin="10dp"
+        android:layout_weight="2.22"
+        android:contentDescription="@string/image_preview"
+        android:src="@drawable/insert_image" />
 
 </LinearLayout>

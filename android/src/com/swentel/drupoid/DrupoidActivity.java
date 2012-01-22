@@ -14,11 +14,13 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
@@ -37,10 +39,11 @@ public class DrupoidActivity extends Activity {
 
   // private static String selectedImagePath = "";
   private ImageView imgView;
-  private Bitmap bitmap = null;
-  private String image_title = "";
-  private static String selectedImagePath = "";
-  private static final int SELECT_PICTURE = 1;
+  private Bitmap bitmap;
+  private String image_title;
+  private String selectedImagePath;
+  private ProgressDialog dialog;
+  private final int SELECT_PICTURE = 1;
   InputStream inputStream;
 
   public void onCreate(Bundle savedInstanceState) {
@@ -92,7 +95,8 @@ public class DrupoidActivity extends Activity {
       EditText title = (EditText) findViewById(R.id.title);
       if (title.getText().toString().length() > 0 && selectedImagePath.toString().length() > 0) {
         image_title = title.getText().toString();
-        DrupoidUpload(selectedImagePath);
+        dialog = ProgressDialog.show(DrupoidActivity.this, getString(R.string.uploading), getString(R.string.please_wait), true);
+        new DrupoidUploadTask().execute();
       }
       else {
         Toast.makeText(getBaseContext(), R.string.missing_data, Toast.LENGTH_LONG).show();
@@ -117,34 +121,53 @@ public class DrupoidActivity extends Activity {
    * Upload to Drupoid enabled server.
    * 
    * @todo do not use base64, but direct httpPost.
-   * @todo use async task.
    */
-  public void DrupoidUpload(String selectedImagePath) {
+  class DrupoidUploadTask extends AsyncTask<Void, Void, String> {
 
-    BitmapFactory.Options o2 = new BitmapFactory.Options();
-    int scale = 2;
-    o2.inSampleSize = scale;
-    Bitmap bitmap = BitmapFactory.decodeFile(selectedImagePath, o2);
-    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream);
-    byte[] byte_arr = stream.toByteArray();
-    String image_str = Base64.encodeBytes(byte_arr);
+    protected String doInBackground(Void... unused) {
+      String sResponse = "";
+      BitmapFactory.Options o2 = new BitmapFactory.Options();
+      int scale = 2;
+      o2.inSampleSize = scale;
+      Bitmap bitmap = BitmapFactory.decodeFile(selectedImagePath, o2);
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream);
+      byte[] byte_arr = stream.toByteArray();
+      String image_str = Base64.encodeBytes(byte_arr);
 
-    ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-    nameValuePairs.add(new BasicNameValuePair("image", image_str));
-    nameValuePairs.add(new BasicNameValuePair("title", image_title));
-    nameValuePairs.add(new BasicNameValuePair("password", DrupoidPassword));
+      ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+      nameValuePairs.add(new BasicNameValuePair("image", image_str));
+      nameValuePairs.add(new BasicNameValuePair("title", image_title));
+      nameValuePairs.add(new BasicNameValuePair("password", DrupoidPassword));
 
-    try {
-      HttpClient httpclient = new DefaultHttpClient();
-      HttpPost httppost = new HttpPost(DrupoidURL);
-      httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-      HttpResponse response = httpclient.execute(httppost);
-      String the_string_response = convertResponseToString(response);
-      Toast.makeText(getBaseContext(), the_string_response, Toast.LENGTH_LONG).show();
+      try {
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpPost httppost = new HttpPost(DrupoidURL);
+        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+        HttpResponse response = httpclient.execute(httppost);
+        sResponse = convertResponseToString(response);
+      }
+      catch (Exception e) {
+        if (dialog.isShowing()) {
+          dialog.dismiss();
+        }
+        Toast.makeText(getBaseContext(), "ERROR " + e.getMessage(), Toast.LENGTH_LONG).show();
+      }
+
+      return sResponse;
     }
-    catch (Exception e) {
-      Toast.makeText(getBaseContext(), "ERROR " + e.getMessage(), Toast.LENGTH_LONG).show();
+
+    protected void onPostExecute(String sResponse) {
+      if (dialog.isShowing()) {
+        dialog.dismiss();
+      }
+      // Show message and reset application.
+      Toast.makeText(getBaseContext(), sResponse, Toast.LENGTH_LONG).show();
+      selectedImagePath = "";
+      EditText title = (EditText) findViewById(R.id.title);
+      title.setText("");
+      ImageView imageView = (ImageView) findViewById(R.id.image_preview);
+      imageView.setImageResource(R.drawable.insert_image);
     }
   }
 

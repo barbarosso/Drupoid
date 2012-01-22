@@ -4,7 +4,10 @@
     <string name="title">Title</string>
     <string name="app_name">Drupoid</string>
     <string name="upload_button">Upload image</string>
-    <string name="missing_title">Please enter a title</string>
+    <string name="missing_data">Please enter a title and select an image</string>
     <string name="picture_select">Select picture</string>
+    <string name="image_preview">Image preview</string>
+    <string name="uploading">Uploading</string>
+    <string name="please_wait">Please wait …</string>
 
 </resources>
