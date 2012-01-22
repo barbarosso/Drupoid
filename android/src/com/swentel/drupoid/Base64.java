@@ -204,9 +204,8 @@ public class Base64 {
 
   /**
    * Encode using the special "ordered" dialect of Base64 described here: <a
-   * href
-   * ="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.
-   * html</a>.
+   * href ="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-
+   * 1940. html</a>.
    */
   public final static int ORDERED = 32;
 
@@ -1422,7 +1421,7 @@ public class Base64 {
         ois = new java.io.ObjectInputStream(bais) {
           @Override
           public Class<?> resolveClass(java.io.ObjectStreamClass streamClass) throws java.io.IOException, ClassNotFoundException {
-            Class c = Class.forName(streamClass.getName(), false, loader);
+            Class<?> c = Class.forName(streamClass.getName(), false, loader);
             if (c == null) {
               return super.resolveClass(streamClass);
             }
