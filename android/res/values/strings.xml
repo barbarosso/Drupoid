@@ -3,7 +3,8 @@
 
     <string name="title">Title</string>
     <string name="app_name">Drupoid</string>
-    <string name="upload_button">Upload</string>
-    <string name="select_image">Select image</string>
+    <string name="upload_button">Upload image</string>
+    <string name="missing_title">Please enter a title</string>
+    <string name="picture_select">Select picture</string>
 
 </resources>

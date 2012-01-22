@@ -24,17 +24,22 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 public class DrupoidActivity extends Activity {
 
+  // @todo add url and password through app, not here.
   // Change this to your Drupoid URL.
   private static final String DrupoidURL = "http://10.0.2.2/drupal7/drupoid";
   // Change this to your Drupoid Password.
   private static final String DrupoidPassword = "test";
 
+  // private static String selectedImagePath = "";
+  private ImageView imgView;
+  private Bitmap bitmap = null;
+  private String image_title = "";
   private static String selectedImagePath = "";
-  private static String image_title = "";
   private static final int SELECT_PICTURE = 1;
   InputStream inputStream;
 
@@ -43,42 +48,57 @@ public class DrupoidActivity extends Activity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
 
-    Button select = (Button) findViewById(R.id.select_image);
-    select.setOnClickListener(onImageSelect);
+    // Add listener on image preview.
+    imgView = (ImageView) findViewById(R.id.image_preview);
+    imgView.setOnClickListener(onSelectPress);
+
+    // Add listener on upload button.
+    Button upload = (Button) findViewById(R.id.upload_button);
+    upload.setOnClickListener(onUploadPress);
   }
 
   /**
-   * OnClickListener on image select button.
+   * OnClickListener on select button.
    */
-  private final View.OnClickListener onImageSelect = new View.OnClickListener() {
-
+  private final View.OnClickListener onSelectPress = new View.OnClickListener() {
     public void onClick(View v) {
-      EditText title = (EditText) findViewById(R.id.title);
-      if (title.getText().toString().length() > 0) {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        image_title = title.getText().toString();
-        startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_PICTURE);
-      }
-      else {
-        Toast.makeText(getBaseContext(), "Please fill in a title first.", Toast.LENGTH_LONG).show();
-      }
+      Intent intent = new Intent();
+      intent.setType("image/*");
+      intent.setAction(Intent.ACTION_GET_CONTENT);
+      startActivityForResult(Intent.createChooser(intent, getString(R.string.picture_select)), SELECT_PICTURE);
     }
   };
 
   /**
-   * Start onActivityResult.
+   * Start onActivityResult for image select.
    */
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     if (resultCode == RESULT_OK) {
       if (requestCode == SELECT_PICTURE) {
         Uri selectedImageUri = data.getData();
         selectedImagePath = getPath(selectedImageUri);
-        DrupoidUpload(selectedImagePath);
+        bitmap = BitmapFactory.decodeFile(selectedImagePath);
+        ImageView imageView = (ImageView) findViewById(R.id.image_preview);
+        imageView.setImageBitmap(bitmap);
       }
     }
   }
+
+  /**
+   * OnClickListener on upload button.
+   */
+  private final View.OnClickListener onUploadPress = new View.OnClickListener() {
+    public void onClick(View v) {
+      EditText title = (EditText) findViewById(R.id.title);
+      if (title.getText().toString().length() > 0 && selectedImagePath.toString().length() > 0) {
+        image_title = title.getText().toString();
+        DrupoidUpload(selectedImagePath);
+      }
+      else {
+        Toast.makeText(getBaseContext(), R.string.missing_data, Toast.LENGTH_LONG).show();
+      }
+    }
+  };
 
   /**
    * Get path of image.
@@ -95,6 +115,9 @@ public class DrupoidActivity extends Activity {
 
   /**
    * Upload to Drupoid enabled server.
+   * 
+   * @todo do not use base64, but direct httpPost.
+   * @todo use async task.
    */
   public void DrupoidUpload(String selectedImagePath) {
 
