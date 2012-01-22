@@ -15,8 +15,8 @@ You can of course change this to your own needs.
 Drupal Installation
 -------------------
 Enable the module, give yourself the 'administer drupoid' permission
-and go to admin/config/media/drupoid where you need to enter a password 
-and the number of your Android phone and configure the image field.
+and go to admin/config/media/drupoid where you need to configure
+some options like image field, author etc.
 
 Every request is logged into watchdog - good or bad.
 
